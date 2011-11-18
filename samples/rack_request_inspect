@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.expand_path('../../lib', __FILE__)
+
+require "libevent"
+require "rack/handler/libevent"
+
+app = lambda { |env| 
+  body = []
+  body << "RACK_ENVIRONMENT:\n"
+  env.sort.each { |pair| body << "%-20s : %s\n" % pair }
+  body << "RACK_INPUT_START"
+  body << env['rack.input'].read
+  body << "RACK_INPUT_END\n"
+
+  headers = {}
+  headers['Content-Type'] = 'text/plain'
+  headers['Content-Length'] = body.inject(0) { |sum, chunk| sum += chunk.size }.to_s
+  headers['Set-Cookie'] = "one=first\nsecond=two"
+
+  [ 200, headers, body ]
+}
+
+Rack::Handler::Libevent.run(app, {
+  :Host    => "0.0.0.0",
+  :Port    => 3000,
+  :timeout => 60,
+})

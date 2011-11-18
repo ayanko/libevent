@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.expand_path('../../lib', __FILE__)
+
+require "libevent"
+
+# curl -v -H 'Host: blog.local' http://localhost:3001/hello
+# curl -v -H 'Host: blog.local' http://localhost:3001/api
+# curl -v -H 'Host: wiki.local' http://localhost:3001
+# curl -v -H 'Host: any.local' http://localhost:3001
+
+Libevent::Builder.new do
+
+  server "0.0.0.0", 3000 do |http|
+
+    http.handler do |request|
+      case request.get_uri_path
+      when '/hello'
+	request.send_reply 200, { 'Content->Type' => 'text/plain'},  [ "Hello World" ]
+      when '/api'
+	request.send_reply 200, { 'Content->Type' => 'application/json'},  [ "{\"version\":\"1.0\"}" ]
+      else
+	request.send_error 404, "Nothing Found"
+      end
+    end
+
+    http.vhost "blog.local" do |host|
+      host.handler do |request|
+	request.send_reply 200, {}, ["It's blog"]
+      end
+    end
+
+    http.vhost "wiki.local" do |host|
+      host.handler do |request|
+	request.send_reply 200, {}, ["It's wiki"]
+      end
+    end
+
+    http.vhost "*.local" do |host|
+      host.handler do |request|
+	request.send_error 404, "Please use blog.local or wiki.local"
+      end
+    end
+
+  end
+
+  server "0.0.0.0", 3001 do |http|
+    http.handler do |request|
+      request.send_reply 200, { 'Content->Type' => 'text/plain'},  [ "Hello World 4000" ]
+    end
+  end
+
+  signal("INT") do
+    base.exit_loop
+  end
+
+  signal("HUP") do
+    Kernel.puts "HUP received ..."
+  end
+
+  dispatch
+
+end
