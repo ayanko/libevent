@@ -144,3 +144,8 @@ Or via rackup
 
 Check rack handler `rack/handler/libevent.rb`
 
+
+## References
+
+* [libevent2 documentation](http://www.wangafu.net/~nickm/libevent-2.0/doxygen/html/index.html)
+* [libevent ruby binding documentation](http://rubydoc.info/github/ayanko/libevent/master/file/README.md)
