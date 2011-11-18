@@ -2,6 +2,12 @@
 
 C extension to [libevent](http://libevent.org/) library.
 
+## Description
+
+The nice feature of libevent is it already contains build in HTTP server (evhttp).
+
+Currently libevent extension implements mostly http server.
+
 ## Dependencies
 
 * libevent v2
@@ -15,6 +21,8 @@ Please read [libevent rubydoc](http://rubydoc.info/github/ayanko/libevent/frames
     gem install libevent
 
 ## Using Libevent HTTP server
+
+Check `samples` directory
 
 ### From scratch
 
@@ -57,5 +65,82 @@ Check with curl
     < 
     Hello World
 
+### Server with virtual hosts
 
-See also `samples` directory
+    require "libevent"
+
+    Libevent::Builder.new do
+
+      server "0.0.0.0", 3000 do |http|
+
+	http.handler do |request|
+	  case request.get_uri_path
+	  when '/hello'
+	    request.send_reply 200, { 'Content->Type' => 'text/plain'},  [ "Hello World" ]
+	  when '/api'
+	    request.send_reply 200, { 'Content->Type' => 'application/json'},  [ "{\"version\":\"1.0\"}" ]
+	  else
+	    request.send_error 404, "Nothing Found"
+	  end
+	end
+
+	http.vhost "blog.local" do |host|
+	  host.handler do |request|
+	    request.send_reply 200, {}, ["It's blog"]
+	  end
+	end
+
+	http.vhost "wiki.local" do |host|
+	  host.handler do |request|
+	    request.send_reply 200, {}, ["It's wiki"]
+	  end
+	end
+
+	http.vhost "*.local" do |host|
+	  host.handler do |request|
+	    request.send_error 404, "Please use blog.local or wiki.local"
+	  end
+	end
+
+      end
+
+      server "0.0.0.0", 3001 do |http|
+	http.handler do |request|
+	  request.send_reply 200, { 'Content->Type' => 'text/plain'},  [ "Hello World 3001" ]
+	end
+      end
+
+      signal("INT") do
+	base.exit_loop
+      end
+
+      signal("HUP") do
+	Kernel.puts "HUP received ..."
+      end
+
+      dispatch
+
+    end
+
+### Serve Rails application
+
+Add to `Gemfile`
+
+    gem "libevent", :require => false
+
+Update gems
+
+    $ bundle install
+
+Run application
+
+    $ script/rails s Libevent
+
+Or via rackup
+
+    $ bundle exec rackup -s Libevent -p 3000
+
+### Serve Rack application
+
+Check rack handler `rack/handler/libevent.rb`
+

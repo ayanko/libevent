@@ -19,8 +19,11 @@ module Rack
       def initialize(app, options)
         @app = app
         
-        @host = options[:Host] or raise ArgumentError, "Host option required"
-        @port = options[:Port] or raise ArgumentError, "Port option required"
+        options[:Host] or raise ArgumentError, "Host option required"
+        options[:Port] or raise ArgumentError, "Port option required"
+
+        @host = options[:Host]
+        @port = options[:Port].to_i
 
         @base = ::Libevent::Base.new
         @http = ::Libevent::Http.new(@base)
