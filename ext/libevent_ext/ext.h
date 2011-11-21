@@ -7,11 +7,11 @@
 #include <event.h>
 #include <evhttp.h>
 
-VALUE mLibevent;
-VALUE cLibevent_Base;
-VALUE cLibevent_Signal;
-VALUE cLibevent_Http;
-VALUE cLibevent_HttpRequest;
+extern VALUE mLibevent;
+extern VALUE cLibevent_Base;
+extern VALUE cLibevent_Signal;
+extern VALUE cLibevent_Http;
+extern VALUE cLibevent_HttpRequest;
 
 typedef struct Libevent_Base {
   struct event_base *ev_base;
