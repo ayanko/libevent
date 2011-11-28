@@ -298,7 +298,7 @@ static VALUE t_get_uri(VALUE self) {
 static VALUE t_get_body(VALUE self) {
   Libevent_HttpRequest *http_request;
   struct evbuffer *ev_buffer;
-  int length;
+  size_t length;
   VALUE body;
 
   Data_Get_Struct(self, Libevent_HttpRequest, http_request);
