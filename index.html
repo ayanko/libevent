@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Libevent by ayanko</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/ayanko/libevent">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/ayanko/libevent/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/ayanko/libevent/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Libevent</h1>
+          <p>C extension to libevent library</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/ayanko">ayanko</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h2>Libevent</h2>
+
+<p>C extension to <a href="http://libevent.org/">libevent</a> library.</p>
+
+<h2>Description</h2>
+
+<p>The nice feature of libevent is it already contains build in HTTP server (evhttp).</p>
+
+<p>Currently libevent extension implements mostly http server.</p>
+
+<h2>Dependencies</h2>
+
+<ul>
+<li>libevent v2</li>
+</ul><h2>Documentation</h2>
+
+<p>Please read <a href="http://rubydoc.info/github/ayanko/libevent/frames">libevent rubydoc</a></p>
+
+<h2>Installation</h2>
+
+<pre><code>gem install libevent
+</code></pre>
+
+<h2>Using Libevent HTTP server</h2>
+
+<p>Check <code>samples</code> directory</p>
+
+<h3>From scratch</h3>
+
+<p>Simple server</p>
+
+<pre><code>require "libevent" 
+
+# create event base
+base = Libevent::Base.new
+
+# create http server instance
+http = Libevent::Http.new(base)
+
+# bind socket
+http.bind_socket("0.0.0.0", 15015)
+
+# set handler
+http.handler do |request|
+  request.send_reply(200, {}, ["Hello World\n"])
+end
+
+# catch SIGINT
+base.trap_signal("INT") { base.exit_loop }
+
+# start libevent loop
+base.dispatch
+</code></pre>
+
+<p>Check with curl</p>
+
+<pre><code>$ curl -v http://localhost:15015
+&gt; GET / HTTP/1.1
+&gt; User-Agent: curl/7.22.0 (x86_64-unknown-linux-gnu) libcurl/7.22.0 OpenSSL/1.0.0e zlib/1.2.5 libssh2/1.3.0
+&gt; Host: localhost:15015
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 200 OK
+&lt; Transfer-Encoding: chunked
+&lt; Date: Fri, 18 Nov 2011 19:09:04 GMT
+&lt; Content-Type: text/html; charset=ISO-8859-1
+&lt; 
+Hello World
+</code></pre>
+
+<h3>Server with virtual hosts</h3>
+
+<pre><code>require "libevent"
+
+Libevent::Builder.new do
+
+  server "0.0.0.0", 3000 do |http|
+
+http.handler do |request|
+  case request.get_uri_path
+  when '/hello'
+    request.send_reply 200, { 'Content-&gt;Type' =&gt; 'text/plain'},  [ "Hello World" ]
+  when '/api'
+    request.send_reply 200, { 'Content-&gt;Type' =&gt; 'application/json'},  [ "{\"version\":\"1.0\"}" ]
+  else
+    request.send_error 404, "Nothing Found"
+  end
+end
+
+http.vhost "blog.local" do |host|
+  host.handler do |request|
+    request.send_reply 200, {}, ["It's blog"]
+  end
+end
+
+http.vhost "wiki.local" do |host|
+  host.handler do |request|
+    request.send_reply 200, {}, ["It's wiki"]
+  end
+end
+
+http.vhost "*.local" do |host|
+  host.handler do |request|
+    request.send_error 404, "Please use blog.local or wiki.local"
+  end
+end
+
+  end
+
+  server "0.0.0.0", 3001 do |http|
+http.handler do |request|
+  request.send_reply 200, { 'Content-&gt;Type' =&gt; 'text/plain'},  [ "Hello World 3001" ]
+end
+  end
+
+  signal("INT") do
+base.exit_loop
+  end
+
+  signal("HUP") do
+Kernel.puts "HUP received ..."
+  end
+
+  dispatch
+
+end
+</code></pre>
+
+<h3>Serve Rails application</h3>
+
+<p>Add to <code>Gemfile</code></p>
+
+<pre><code>gem "libevent", :require =&gt; false
+</code></pre>
+
+<p>Update gems</p>
+
+<pre><code>$ bundle install
+</code></pre>
+
+<p>Run application</p>
+
+<pre><code>$ script/rails s Libevent
+</code></pre>
+
+<p>Or via rackup</p>
+
+<pre><code>$ bundle exec rackup -s Libevent -p 3000
+</code></pre>
+
+<h3>Serve Rack application</h3>
+
+<p>Check rack handler <code>rack/handler/libevent.rb</code></p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://www.wangafu.net/%7Enickm/libevent-2.0/doxygen/html/index.html">libevent2 documentation</a></li>
+<li><a href="http://rubydoc.info/github/ayanko/libevent/master/file/README.md">libevent ruby binding documentation</a></li>
+</ul>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+    
+  </body>
+</html>
